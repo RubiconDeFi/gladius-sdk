@@ -1,6 +1,6 @@
 # gladius-sdk
 
-Forked SDK from UniswapX protocol
+SDK for Rubicon Gladius
 
 ## Usage
 
