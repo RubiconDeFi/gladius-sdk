@@ -45,20 +45,12 @@ export function parseOrder(order: string): Order {
  * @return Parsed order object
  */
 export function parseOrderWithChainId(order: string, chainId: number): Order {
-  // reactor address is always the first field in order
   const reactor = REACTOR_ADDRESS_MAPPING[chainId][OrderType.Dutch];
-  console.log("this reactor", reactor);
-
 
   if (!reactor) {
     throw new MissingConfiguration("reactor", reactor);
   }
 
-  // const { chainId, orderType } = REVERSE_REACTOR_MAPPING[reactor];
-  // switch (orderType) {
-  //   case OrderType.Dutch:
   return DutchOrder.parse(order, chainId);
-  //   default:
-  //     throw new MissingConfiguration("orderType", orderType);
-  // }
+
 }

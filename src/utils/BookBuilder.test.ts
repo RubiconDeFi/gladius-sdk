@@ -42,10 +42,18 @@ describe('BookBuilder Integration Tests', () => {
 
     await new Promise((resolve) => setTimeout(resolve, 2000)); // Wait for 2 seconds
 
-    // expect(bookBuilder).toHaveProperty('book');
-    // expect(bookBuilder.book).toHaveProperty('asks');
-    // expect(bookBuilder.book).toHaveProperty('bids');
+    const book = bookBuilder.getBook();
+
+    expect(bookBuilder).toHaveProperty('book');
+    expect(book).toHaveProperty('asks');
+    expect(book).toHaveProperty('bids');
+
+    console.log("this is the book", book);
+    
+    // expect(book.asks.length).toBe(1 || 0);
+    // expect(book.bids.length).toBe(1 || 0);
     // Further assertions can be added based on the expected structure of the book
+
   });
 
   // Additional tests...
