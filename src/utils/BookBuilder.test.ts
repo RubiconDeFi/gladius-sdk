@@ -18,6 +18,11 @@ describe('BookBuilder Integration Tests', () => {
   test('getOffers fetches data from live API', async () => {
     const data = await bookBuilder.getOffers();
     console.log("this data from getOffers", data);
+    const exampleBid = data.bids.orders[0];
+    console.log("this is an exmaple bid", exampleBid);
+    console.log("this is an example bid input", exampleBid.input);
+    console.log("this is an example bid output", exampleBid.outputs);
+    
     // console.log("these inputs order 0", data.orders[0].input);
     // console.log('these outputs order 0', data.orders[0].outputs);
     // console.log('these input order 1', data.orders[1].input);
@@ -30,18 +35,18 @@ describe('BookBuilder Integration Tests', () => {
     // Further assertions can be added based on the expected structure of data
   });
 
-//   test('listenToGladiusBook updates the book', async () => {
-//     // Call the method and then wait for a short duration to allow the update
-//     jest.setTimeout(10000); // Set timeout to 10 seconds for this test
-//     // bookBuilder.listenToGladiusBook();
+  test('listenToGladiusBook updates the book', async () => {
+    // Call the method and then wait for a short duration to allow the update
+    jest.setTimeout(3000); // Set timeout to 3 seconds for this test
+    // bookBuilder.listenToGladiusBook();
 
-//     await new Promise((resolve) => setTimeout(resolve, 2000)); // Wait for 2 seconds
+    await new Promise((resolve) => setTimeout(resolve, 2000)); // Wait for 2 seconds
 
-//     expect(bookBuilder).toHaveProperty('book');
-//     expect(bookBuilder.book).toHaveProperty('asks');
-//     expect(bookBuilder.book).toHaveProperty('bids');
-//     // Further assertions can be added based on the expected structure of the book
-//   });
+    // expect(bookBuilder).toHaveProperty('book');
+    // expect(bookBuilder.book).toHaveProperty('asks');
+    // expect(bookBuilder.book).toHaveProperty('bids');
+    // Further assertions can be added based on the expected structure of the book
+  });
 
   // Additional tests...
 });
