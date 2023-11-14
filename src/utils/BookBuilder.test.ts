@@ -18,10 +18,10 @@ describe('BookBuilder Integration Tests', () => {
   test('getOffers fetches data from live API', async () => {
     const data = await bookBuilder.getOffers();
     console.log("this data from getOffers", data);
-    const exampleBid = data.bids.orders[0];
-    console.log("this is an exmaple bid", exampleBid);
-    console.log("this is an example bid input", exampleBid.input);
-    console.log("this is an example bid output", exampleBid.outputs);
+    // const exampleBid = data.bids.orders[0];
+    // console.log("this is an exmaple bid", exampleBid);
+    // console.log("this is an example bid input", exampleBid.input);
+    // console.log("this is an example bid output", exampleBid.outputs);
     
     // console.log("these inputs order 0", data.orders[0].input);
     // console.log('these outputs order 0', data.orders[0].outputs);

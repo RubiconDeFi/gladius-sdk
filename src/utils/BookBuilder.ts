@@ -54,9 +54,6 @@ class BookBuilder extends EventEmitter {
 
             this.listenToGladiusBook();
         });
-
-        console.log("rpcUrl", this.rpcUrl);
-        console.log("book", this.book);
     }
 
     private async initializeTokenDecimals(): Promise<void> {
@@ -114,8 +111,8 @@ class BookBuilder extends EventEmitter {
     private parseRawDataToUpdateFormattedBook(_asks: any, _bids: any) {
         const asks = _asks.orders;
         const bids = _bids.orders;
-        console.log("this is asks", asks);
-        console.log("this is bids", bids);
+        // console.log("this is asks", asks);
+        // console.log("this is bids", bids);
 
         // Loop through the asks and bids and parse the data
         // TODO: at some point we will add deadline filtering here
@@ -139,7 +136,7 @@ class BookBuilder extends EventEmitter {
                 }
                 try {
                     const parsedOrderData = parseOrderWithChainId(ask.encodedOrder, this.chainID)
-                    console.log("this is the parsed order ASK data", parsedOrderData);
+                    // console.log("this is the parsed order ASK data", parsedOrderData);
 
                     // e.g.
                     //     info: {
@@ -169,14 +166,14 @@ class BookBuilder extends EventEmitter {
                     // TODO: also introduce deadline leadup time for added cushion!
                     if (parsedOrderData.info.deadline < Math.floor(Date.now() / 1000)) {
 
-                        console.log("deadline", parsedOrderData.info.deadline);
-                        console.log("now", Math.floor(Date.now() / 1000));
+                        // console.log("deadline", parsedOrderData.info.deadline);
+                        // console.log("now", Math.floor(Date.now() / 1000));
                         
-                        console.log("this order is expired");
+                        // console.log("this order is expired");
                         continue;
                     }
 
-                    console.log("this order is not expired");
+                    // console.log("this order is not expired");
                     
 
                     // Perform any more filtering as needed
@@ -212,7 +209,7 @@ class BookBuilder extends EventEmitter {
                 const assetOutputEndAmount = bid.outputs[0].endAmount;
 
                 if (bid.input.token != this.quoteAddress || bid.outputs[0].token != this.assetAddress) {
-                    console.log("bid inputs token does not match quote address");
+                    // console.log("bid inputs token does not match quote address");
                     continue;
                 }
 
@@ -223,10 +220,10 @@ class BookBuilder extends EventEmitter {
                     // deadline filtering
                     // TODO: also introduce deadline leadup time for added cushion!
                     if (parsedOrderData.info.deadline < Math.floor(Date.now() / 1000)) {
-                        console.log("this order is expired");
+                        // console.log("this order is expired");
                         continue;
                     }
-                    console.log("this order is not expired");
+                    // console.log("this order is not expired");
 
                     // Perform any more filtering as needed
 
