@@ -10,7 +10,7 @@ describe('BookBuilder Integration Tests', () => {
       assetAddress: '0x4200000000000000000000000000000000000006',
       quoteAddress: '0x7F5c764cBc14f9669B88837ca1490cCa17c31607',
       gladiusUrl: 'https://gladius-staging.rubicon.finance/',
-      rpcUrl: 'http://mmt.optimism.mainnet.rubicon.ninja',
+      rpcUrl: 'https://rpc.ankr.com/optimism',
       gladiusPollTime: 500, // Optional, can be adjusted
       expirationPadding: 0, // Optional, can be adjusted
     });
