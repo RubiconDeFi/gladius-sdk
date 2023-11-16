@@ -1,18 +1,13 @@
-// An object that builds and displays order book information for a given ERC20 pair on Gladius
 import EventEmitter from 'events';
 
-// import { /* other necessary imports */ } from '...';
 import { JsonRpcProvider } from '@ethersproject/providers';
 import axios from 'axios';
-import { Interface, formatUnits } from 'ethers/lib/utils';
+import { Contract } from 'ethers';
+import { formatUnits, Interface } from 'ethers/lib/utils';
 
 import ERC20DATA from '../../abis/MockERC20.json';
-import { Contract } from 'ethers';
 import { parseOrderWithChainId } from '../order';
 
-// interface GenericOrderWithOrderPayload extends GenericOrderWithData {
-//     payload: any; // Adjust according to your payload structure
-// }
 
 interface GenericOrderWithData {
     size: number;
