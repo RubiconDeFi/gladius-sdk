@@ -25,14 +25,14 @@ interface SimpleBook {
     bids: GenericOrderWithData[];
 }
 
-interface Config { 
+interface Config {
     chainID: number;
     assetAddress: string;
     quoteAddress: string;
     gladiusUrl: string;
     rpcUrl: string;
     gladiusPollTime?: number;
-    expirationPadding?: number;
+    expirationPadding?: number; // milliseconds
 }
 
 class BookBuilder extends EventEmitter {
@@ -120,104 +120,96 @@ class BookBuilder extends EventEmitter {
     private parseRawDataToUpdateFormattedBook(_asks: any, _bids: any) {
         const asks = _asks.orders;
         const bids = _bids.orders;
-        // console.log("this is asks", asks);
-        // console.log("this is bids", bids);
-
-        // Loop through the asks and bids and parse the data
-        // TODO: at some point we will add deadline filtering here
 
         const newAsks: GenericOrderWithData[] = [];
         const newBids: GenericOrderWithData[] = [];
-        for (let index = 0; index < Math.max(asks.length, bids.length); index++) {
-            const ask = asks[index];
-            const bid = bids[index];
+        // Process asks
+        asks.forEach((ask: any) => {
+            // Your existing logic for processing an ask
+            // console.log("got an ask we need to parse", ask);
+            const quoteOutputStartAmount = ask.outputs[0].startAmount;
+            const quoteOutputEndAmount = ask.outputs[0].endAmount;
+            const assetInputStartAmount = ask.input.startAmount;
+            const assetInputEndAmount = ask.input.endAmount;
 
-            if (ask) {
-                // console.log("got an ask we need to parse", ask);
-                const quoteOutputStartAmount = ask.outputs[0].startAmount;
-                const quoteOutputEndAmount = ask.outputs[0].endAmount;
-                const assetInputStartAmount = ask.input.startAmount;
-                const assetInputEndAmount = ask.input.endAmount;
+            if (ask.outputs[0].token != this.quoteAddress || ask.input.token != this.assetAddress) {
+                console.log("ask outputs token does not match quote address");
+                return;
+            }
+            try {
+                const parsedOrderData = parseOrderWithChainId(ask.encodedOrder, this.chainID)
 
-                if (ask.outputs[0].token != this.quoteAddress || ask.input.token != this.assetAddress) {
-                    console.log("ask outputs token does not match quote address");
-                    continue;
+                // deadline filtering
+                if (parsedOrderData.info.deadline < Math.floor(Date.now() / 1000) - (this.expirationPadding / 1000)) {
+                    return;
                 }
-                try {
-                    const parsedOrderData = parseOrderWithChainId(ask.encodedOrder, this.chainID)
 
-                    // deadline filtering
-                    // TODO: also introduce deadline leadup time for added cushion!
-                    if (parsedOrderData.info.deadline < Math.floor(Date.now() / 1000) - this.expirationPadding) {
-                        continue;
-                    }
-
-                    // Perform any more filtering as needed
-                    if (quoteOutputEndAmount == quoteOutputStartAmount && assetInputEndAmount == assetInputStartAmount) {
-                        // Non decaying order we can parse
-                        const quoteOutputAmount = quoteOutputEndAmount;
-                        const assetInputAmount = assetInputStartAmount;
-                        const price = parseFloat(formatUnits(quoteOutputAmount, this.quoteDecimals)) / parseFloat(formatUnits(assetInputAmount, this.assetDecimals));
-                        const size = parseFloat(formatUnits(assetInputAmount, this.assetDecimals));
-                        const data = {
-                            parsedInfo: parsedOrderData.info,
-                            rawOrder: ask,
-                        };
-                        newAsks.push({ size, price, data });
-                    } else {
-                        //  have a dutch order we need to parse!
-                        console.log("TODO: this is a dutch order we need to parse");
-
-                    }
-
-                } catch (error) {
-                    console.log("error parsing order", error);
+                // Perform any more filtering as needed
+                if (quoteOutputEndAmount == quoteOutputStartAmount && assetInputEndAmount == assetInputStartAmount) {
+                    // Non decaying order we can parse
+                    const quoteOutputAmount = quoteOutputEndAmount;
+                    const assetInputAmount = assetInputStartAmount;
+                    const price = parseFloat(formatUnits(quoteOutputAmount, this.quoteDecimals)) / parseFloat(formatUnits(assetInputAmount, this.assetDecimals));
+                    const size = parseFloat(formatUnits(assetInputAmount, this.assetDecimals));
+                    const data = {
+                        parsedInfo: parsedOrderData.info,
+                        rawOrder: ask,
+                    };
+                    newAsks.push({ size, price, data });
+                } else {
+                    //  have a dutch order we need to parse!
+                    console.log("TODO: this is a dutch order we need to parse");
 
                 }
+
+            } catch (error) {
+                console.log("error parsing order", error);
 
             }
 
-            if (bid) {
-                const quoteInputStartAmount = bid.input.startAmount;
-                const quoteInputEndAmount = bid.input.endAmount;
-                const assetOutputStartAmount = bid.outputs[0].startAmount;
-                const assetOutputEndAmount = bid.outputs[0].endAmount;
+        });
 
-                if (bid.input.token != this.quoteAddress || bid.outputs[0].token != this.assetAddress) {
-                    continue;
-                }
+        // Process bids
+        bids.forEach((bid: any) => {
+            // Your existing logic for processing a bid
+            const quoteInputStartAmount = bid.input.startAmount;
+            const quoteInputEndAmount = bid.input.endAmount;
+            const assetOutputStartAmount = bid.outputs[0].startAmount;
+            const assetOutputEndAmount = bid.outputs[0].endAmount;
 
-                try {
-                    const parsedOrderData = parseOrderWithChainId(bid.encodedOrder, this.chainID)
-
-                    // deadline filtering
-                    // TODO: also introduce deadline leadup time for added cushion!
-                    if (parsedOrderData.info.deadline < Math.floor(Date.now() / 1000) - this.expirationPadding) {
-                        continue;
-                    }
-
-                    if (quoteInputEndAmount == quoteInputStartAmount && assetOutputEndAmount == assetOutputStartAmount) {
-                        // Non decaying order we can parse
-                        const quoteInputAmount = quoteInputEndAmount;
-                        const assetOutputAmount = assetOutputStartAmount;
-                        const price = parseFloat(formatUnits(quoteInputAmount, this.quoteDecimals)) / parseFloat(formatUnits(assetOutputAmount, this.assetDecimals));
-                        const size = parseFloat(formatUnits(assetOutputAmount, this.assetDecimals));
-                        const data = {
-                            parsedInfo: parsedOrderData.info,
-                            rawOrder: bid,
-                        };
-                        newBids.push({ size, price, data });
-                    } else {
-                        //  have a dutch order we need to parse!
-                        console.log("TODO: this is a dutch order we need to parse");
-
-                    }
-
-                } catch (error) {
-                    console.log("error parsing BID order", error);
-                }
+            if (bid.input.token != this.quoteAddress || bid.outputs[0].token != this.assetAddress) {
+                return;
             }
-        }
+
+            try {
+                const parsedOrderData = parseOrderWithChainId(bid.encodedOrder, this.chainID)
+
+                // deadline filtering
+                if (parsedOrderData.info.deadline < Math.floor(Date.now() / 1000) - (this.expirationPadding / 1000)) {
+                    return;
+                }
+
+                if (quoteInputEndAmount == quoteInputStartAmount && assetOutputEndAmount == assetOutputStartAmount) {
+                    // Non decaying order we can parse
+                    const quoteInputAmount = quoteInputEndAmount;
+                    const assetOutputAmount = assetOutputStartAmount;
+                    const price = parseFloat(formatUnits(quoteInputAmount, this.quoteDecimals)) / parseFloat(formatUnits(assetOutputAmount, this.assetDecimals));
+                    const size = parseFloat(formatUnits(assetOutputAmount, this.assetDecimals));
+                    const data = {
+                        parsedInfo: parsedOrderData.info,
+                        rawOrder: bid,
+                    };
+                    newBids.push({ size, price, data });
+                } else {
+                    //  have a dutch order we need to parse!
+                    console.log("TODO: this is a dutch order we need to parse");
+
+                }
+
+            } catch (error) {
+                console.log("error parsing BID order", error);
+            }
+        });
 
         // Implement the parsing logic as per your requirements
         // Update this.book with the parsed data

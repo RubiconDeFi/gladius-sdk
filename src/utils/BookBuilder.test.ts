@@ -12,6 +12,7 @@ describe('BookBuilder Integration Tests', () => {
       gladiusUrl: 'https://gladius-staging.rubicon.finance/',
       rpcUrl: 'http://mmt.optimism.mainnet.rubicon.ninja',
       gladiusPollTime: 500, // Optional, can be adjusted
+      expirationPadding: 0, // Optional, can be adjusted
     });
   });
 
@@ -40,7 +41,7 @@ describe('BookBuilder Integration Tests', () => {
     jest.setTimeout(3000); // Set timeout to 3 seconds for this test
     // bookBuilder.listenToGladiusBook();
 
-    await new Promise((resolve) => setTimeout(resolve, 2000)); // Wait for 2 seconds
+    await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait for 2 seconds
 
     const book = bookBuilder.getBook();
 
