@@ -1,4 +1,4 @@
-import { OrderType, REVERSE_REACTOR_MAPPING } from "../constants";
+import { OrderType, REACTOR_ADDRESS_MAPPING, REVERSE_REACTOR_MAPPING } from "../constants";
 import { MissingConfiguration } from "../errors";
 import { stripHexPrefix } from "../utils";
 
@@ -35,4 +35,19 @@ export function parseOrder(order: string): Order {
     default:
       throw new MissingConfiguration("orderType", orderType);
   }
+}
+
+/**
+ * Parses a given serialized order based on chainId
+ * @return Parsed order object
+ */
+export function parseOrderWithChainId(order: string, chainId: number): Order {
+  const reactor = REACTOR_ADDRESS_MAPPING[chainId][OrderType.Dutch];
+
+  if (!reactor) {
+    throw new MissingConfiguration("reactor", reactor);
+  }
+
+  return DutchOrder.parse(order, chainId);
+
 }
