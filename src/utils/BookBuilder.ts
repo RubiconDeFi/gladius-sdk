@@ -35,6 +35,12 @@ interface Config {
     expirationPadding?: number; // milliseconds
 }
 
+/**
+ * BookBuilder class builds and displays order book information for a given ERC20 pair on Gladius.
+ * This class listens to updates from Gladius and maintains an order book.
+ * 
+ * @extends EventEmitter
+ */
 class BookBuilder extends EventEmitter {
     private chainID: number;
     private assetAddress: string;
@@ -48,6 +54,18 @@ class BookBuilder extends EventEmitter {
     private rpcProvider: JsonRpcProvider;
     private expirationPadding: number;
 
+    /**
+    * Constructs the BookBuilder instance with the given configuration.
+    * 
+    * @param {Config} config - Configuration object for the BookBuilder.
+    * @param {number} config.chainID - The blockchain network chain ID.
+    * @param {string} config.assetAddress - The address of the asset (ERC20 token).
+    * @param {string} config.quoteAddress - The address of the quote (ERC20 token).
+    * @param {string} config.gladiusUrl - The URL to the Gladius service.
+    * @param {string} config.rpcUrl - The URL to the RPC provider.
+    * @param {number} [config.gladiusPollTime=500] - OPTIONAL: The polling interval in milliseconds for Gladius book updates.
+    * @param {number} [config.expirationPadding=10] - OPTIONAL: Padding time for order expiration in milliseconds.
+    */
     constructor(config: Config) {
         super();
         this.chainID = config.chainID;
@@ -65,6 +83,12 @@ class BookBuilder extends EventEmitter {
         });
     }
 
+    /**
+    * Initializes token decimals for asset and quote ERC20 tokens.
+    * This method sets up the contract instances and fetches the decimal values.
+    * @private
+    * @returns {Promise<void>}
+    */
     private async initializeTokenDecimals(): Promise<void> {
         try {
             const assetContract = new Contract(this.assetAddress, new Interface(ERC20DATA.abi), this.rpcProvider);
@@ -99,6 +123,11 @@ class BookBuilder extends EventEmitter {
         }, this.gladiusPollTime);
     }
 
+    /**
+    * Fetches offers from the Gladius service for both bids and asks.
+    * @public
+    * @returns {Promise<{bids: any; asks: any}>} An object containing bid and ask data in raw form, unparsed. See parseOrderWithChainID or parseOrder for parsing.
+    */
     public async getOffers(): Promise<{ bids: any; asks: any }> {
         try {
             // Note: for some reason order really matters here!
@@ -115,7 +144,6 @@ class BookBuilder extends EventEmitter {
             throw error;
         }
     }
-
 
     private parseRawDataToUpdateFormattedBook(_asks: any, _bids: any) {
         const asks = _asks.orders;
@@ -219,18 +247,28 @@ class BookBuilder extends EventEmitter {
         };
     }
 
+    /**
+    * Returns the current state of the book with asks and bids. Contains price, size, and parsed order data associated with each offer.
+    * @public
+    * @returns {SimpleBook} The current state of the book.
+    */
     public getBook(): SimpleBook {
         return this.book;
     }
 
-    // Function to query output and data to send for a given input amount of quote
+    /**
+     * Queries the market to determine how much asset can be purchased with a given amount of quote currency.
+     * @public
+     * @param {number} quoteAmount - The amount of quote currency to spend.
+     * @returns {{ assetPurchased: number; orders: string[] }} An object containing the amount of asset that can be purchased and an array of encoded orders that can be used for execution.
+     */
     public queryMarketBuy(quoteAmount: number): { assetPurchased: number, orders: string[] } {
         if (this.book.asks.length === 0) return { assetPurchased: 0, orders: [] };
-    
+
         let remainingQuote = quoteAmount;
         let assetPurchased = 0;
         const encodedOrders: string[] = [];
-    
+
         for (const ask of this.book.asks) {
             const totalOrderCost = ask.size * ask.price;
             if (remainingQuote >= totalOrderCost) {
@@ -241,17 +279,23 @@ class BookBuilder extends EventEmitter {
                 break;
             }
         }
-    
+
         return { assetPurchased, orders: encodedOrders };
     }
-    
+
+    /**
+    * Queries the market to determine how much quote currency can be obtained by selling a given amount of asset.
+    * @public
+    * @param {number} assetAmount - The amount of asset to sell.
+    * @returns {{ quoteReceived: number; orders: string[] }} An object containing the amount of quote currency that can be obtained and an array of encoded orders that can be used for execution.
+    */
     public queryMarketSell(assetAmount: number): { quoteReceived: number, orders: string[] } {
         if (this.book.bids.length === 0) return { quoteReceived: 0, orders: [] };
-    
+
         let remainingAsset = assetAmount;
         let quoteReceived = 0;
         const encodedOrders: string[] = [];
-    
+
         for (const bid of this.book.bids) {
             if (remainingAsset >= bid.size) {
                 quoteReceived += bid.size * bid.price;
@@ -261,12 +305,9 @@ class BookBuilder extends EventEmitter {
                 break;
             }
         }
-    
+
         return { quoteReceived, orders: encodedOrders };
     }
-    
-    
-
 }
 
 export default BookBuilder;
