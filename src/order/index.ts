@@ -24,9 +24,6 @@ export function parseOrder(order: string): Order {
       .slice(FIRST_FIELD_OFFSET, FIRST_FIELD_OFFSET + ADDRESS_LENGTH)
       .toLowerCase();
 
-  console.log("this reactor", reactor);
-
-
   if (!REVERSE_REACTOR_MAPPING[reactor]) {
     throw new MissingConfiguration("reactor", reactor);
   }
