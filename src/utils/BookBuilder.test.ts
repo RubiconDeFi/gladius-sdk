@@ -18,7 +18,7 @@ describe('BookBuilder Integration Tests', () => {
 
   test('getOffers fetches data from live API', async () => {
     const data = await bookBuilder.getOffers();
-    console.log("this data from getOffers", data);
+    // console.log("this data from getOffers", data);
     // const exampleBid = data.bids.orders[0];
     // console.log("this is an exmaple bid", exampleBid);
     // console.log("this is an example bid input", exampleBid.input);
@@ -49,13 +49,42 @@ describe('BookBuilder Integration Tests', () => {
     expect(book).toHaveProperty('asks');
     expect(book).toHaveProperty('bids');
 
-    console.log("this is the book", book);
+    // console.log("this is the book", book);
     
-    // expect(book.asks.length).toBe(1 || 0);
-    // expect(book.bids.length).toBe(1 || 0);
+    expect(book.asks.length).toBeGreaterThanOrEqual(1);
+    expect(book.bids.length).toBeGreaterThanOrEqual(1);
     // Further assertions can be added based on the expected structure of the book
 
   });
+
+
+  test('queryMarketBuy calculates correct asset purchase and returns encoded orders', () => {
+    const quoteToSpend = 3000;
+    const expectedAssetAmount = 2.5;
+
+    const result = bookBuilder.queryMarketBuy(quoteToSpend);
+
+    // console.log("Market Buy Result:", result);
+    
+    expect(result.assetPurchased).toBeGreaterThan(0);
+    expect(result.assetPurchased).toBeLessThan(expectedAssetAmount);
+    expect(result.orders).toBeDefined();
+    expect(result.orders.length).toBeGreaterThanOrEqual(1); // Check if at least one order is returned
+});
+
+test('queryMarketSell calculates correct quote received and returns encoded orders', () => {
+    const assetToSell = 2;
+    const expectedQuoteAmount = 4000;
+
+    const result = bookBuilder.queryMarketSell(assetToSell);
+
+    // console.log("Market Sell Result:", result);
+    
+    expect(result.quoteReceived).toBeGreaterThan(0);
+    expect(result.quoteReceived).toBeLessThan(expectedQuoteAmount);
+    expect(result.orders).toBeDefined();
+    expect(result.orders.length).toBeGreaterThanOrEqual(1); // Check if at least one order is returned
+});
 
   // Additional tests...
 });

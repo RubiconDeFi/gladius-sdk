@@ -78,7 +78,7 @@ class BookBuilder extends EventEmitter {
             this.assetDecimals = assetDecimals;
             this.quoteDecimals = quoteDecimals;
 
-            console.log(`Asset Decimals: ${this.assetDecimals}, Quote Decimals: ${this.quoteDecimals}`);
+            // console.log(`Asset Decimals: ${this.assetDecimals}, Quote Decimals: ${this.quoteDecimals}`);
         } catch (error) {
             console.log("tried this contract address", this.assetAddress);
             console.log("tried this contract address", this.quoteAddress);
@@ -222,6 +222,50 @@ class BookBuilder extends EventEmitter {
     public getBook(): SimpleBook {
         return this.book;
     }
+
+    // Function to query output and data to send for a given input amount of quote
+    public queryMarketBuy(quoteAmount: number): { assetPurchased: number, orders: string[] } {
+        if (this.book.asks.length === 0) return { assetPurchased: 0, orders: [] };
+    
+        let remainingQuote = quoteAmount;
+        let assetPurchased = 0;
+        const encodedOrders: string[] = [];
+    
+        for (const ask of this.book.asks) {
+            const totalOrderCost = ask.size * ask.price;
+            if (remainingQuote >= totalOrderCost) {
+                assetPurchased += ask.size;
+                remainingQuote -= totalOrderCost;
+                encodedOrders.push(ask.data.rawOrder.encodedOrder);
+            } else {
+                break;
+            }
+        }
+    
+        return { assetPurchased, orders: encodedOrders };
+    }
+    
+    public queryMarketSell(assetAmount: number): { quoteReceived: number, orders: string[] } {
+        if (this.book.bids.length === 0) return { quoteReceived: 0, orders: [] };
+    
+        let remainingAsset = assetAmount;
+        let quoteReceived = 0;
+        const encodedOrders: string[] = [];
+    
+        for (const bid of this.book.bids) {
+            if (remainingAsset >= bid.size) {
+                quoteReceived += bid.size * bid.price;
+                remainingAsset -= bid.size;
+                encodedOrders.push(bid.data.rawOrder.encodedOrder);
+            } else {
+                break;
+            }
+        }
+    
+        return { quoteReceived, orders: encodedOrders };
+    }
+    
+    
 
 }
 
