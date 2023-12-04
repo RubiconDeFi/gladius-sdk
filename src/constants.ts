@@ -56,11 +56,14 @@ export const REACTOR_ADDRESS_MAPPING: ReactorMapping = {
   137: {
     [OrderType.Dutch]: "0x6000da47483062A0D734Ba3dc7576Ce6A0B645C4",
   },
+  420: {
+    [OrderType.Dutch]: "0xC79A3da4107DE6c22bEd13E3f09a1379D49f2189",
+  },
   42161: {
     [OrderType.Dutch]: "0xAeb3e81b8e1A425985816B5f436BDF1E0b542418",
   },
   421613: {
-    [OrderType.Dutch]: "0x53B91D1724F4bb523C2598340849Ff7eb1A12465",
+    [OrderType.Dutch]: "0x8D228f8A5C78F82E8300244497114BC482F6c213",
   },
   12341234: {
     [OrderType.Dutch]: "0xbD7F9D0239f81C94b728d827a87b9864972661eC",
