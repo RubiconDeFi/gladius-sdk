@@ -133,6 +133,7 @@ export class GladiusOrder extends Order {
           endAmount: BigNumber.from(output.endAmount),
           recipient: output.recipient,
         })),
+        outputFillThreshold: BigNumber.from(json.outputFillThreshold)
       },
       chainId,
       _permit2Address
