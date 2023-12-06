@@ -2,17 +2,18 @@ import { BigNumber, ethers } from "ethers";
 import invariant from "tiny-invariant";
 import { OrderType, REACTOR_ADDRESS_MAPPING } from "../constants";
 import { MissingConfiguration } from "../errors";
-import { DutchInput, DutchOrder, DutchOrderInfo, DutchOutput } from "../order";
+import { DutchInput, DutchOutput } from "../order";
 import { ValidationInfo } from "../order/validation";
 import { OrderBuilder } from "./OrderBuilder";
+import { GladiusOrder, GladiusOrderInfo } from "../order/GladiusOrder";
 
 /**
  * Helper builder for generating dutch limit orders
  */
 export class GladiusOrderBuilder extends OrderBuilder {
-  private info: Partial<DutchOrderInfo>;
+  private info: Partial<GladiusOrderInfo>;
 
-  static fromOrder(order: DutchOrder): GladiusOrderBuilder {
+  static fromOrder(order: GladiusOrder): GladiusOrderBuilder {
     // note chainId not used if passing in true reactor address
     const builder = new GladiusOrderBuilder(order.chainId, order.info.reactor)
       .deadline(order.info.deadline)
@@ -139,7 +140,12 @@ export class GladiusOrderBuilder extends OrderBuilder {
     return this;
   }
 
-  build(): DutchOrder {
+  outputFillThreshold(minimum: BigNumber): GladiusOrderBuilder {
+    this.info.outputFillThreshold = minimum;
+    return this;
+  }
+
+  build(): GladiusOrder {
     invariant(this.info.decayStartTime !== undefined, "decayStartTime not set");
     invariant(this.info.input !== undefined, "input not set");
     invariant(this.info.decayEndTime !== undefined, "decayEndTime not set");
@@ -170,8 +176,12 @@ export class GladiusOrderBuilder extends OrderBuilder {
         this.info.decayEndTime <= this.orderInfo.deadline,
       `decayEndTime must be before or same as deadline: ${this.info.decayEndTime}`
     );
+    invariant(
+        this.info.outputFillThreshold !== undefined && this.info.outputs[0] && this.info.outputFillThreshold.lte(this.info.outputs[0].endAmount),
+      `outputFillThreshold must be set and less than or equal to output amount`
+    );
 
-    return new DutchOrder(
+    return new GladiusOrder(
       Object.assign(this.getOrderInfo(), {
         decayStartTime: this.info.decayStartTime,
         decayEndTime: this.info.decayEndTime,
@@ -179,6 +189,7 @@ export class GladiusOrderBuilder extends OrderBuilder {
         exclusivityOverrideBps: this.info.exclusivityOverrideBps,
         input: this.info.input,
         outputs: this.info.outputs,
+        outputFillThreshold: this.info.outputFillThreshold
       }),
       this.chainId,
       this.permit2Address

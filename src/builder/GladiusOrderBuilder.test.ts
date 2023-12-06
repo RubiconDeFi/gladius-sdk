@@ -2,6 +2,7 @@ import { BigNumber } from "ethers";
 import { DutchOrder } from "../order/DutchOrder";
 import { encodeExclusiveFillerData, ValidationType } from "../order/validation";
 import { GladiusOrderBuilder } from "./GladiusOrderBuilder";
+import { GladiusOrder } from "../order/GladiusOrder";
 
 describe("GladiusOrderBuilder", () => {
   let builder: GladiusOrderBuilder;
@@ -148,7 +149,7 @@ describe("GladiusOrderBuilder", () => {
 
     const json = order.toJSON();
     const regenerated = GladiusOrderBuilder.fromOrder(
-      DutchOrder.fromJSON(json, 1)
+      GladiusOrder.fromJSON(json, 1)
     ).build();
     expect(regenerated.toJSON()).toMatchObject(order.toJSON());
   });
