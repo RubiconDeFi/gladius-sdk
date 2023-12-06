@@ -1,5 +1,4 @@
 import { BigNumber } from "ethers";
-import { DutchOrder } from "../order/DutchOrder";
 import { encodeExclusiveFillerData, ValidationType } from "../order/validation";
 import { GladiusOrderBuilder } from "./GladiusOrderBuilder";
 import { GladiusOrder } from "../order/GladiusOrder";
