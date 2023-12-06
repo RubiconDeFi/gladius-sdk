@@ -1,6 +1,4 @@
 import { SignatureLike } from "@ethersproject/bytes";
-import { keccak256 } from "@ethersproject/keccak256";
-import { toUtf8Bytes } from "@ethersproject/strings";
 import {
   PermitTransferFrom,
   PermitTransferFromData,
@@ -15,33 +13,7 @@ import { ResolvedOrder } from "../utils/OrderQuoter";
 import { getDecayedAmount } from "../utils/dutchDecay";
 
 import { Order, OrderInfo, OrderResolutionOptions } from "./types";
-
-export function id(text: string): string {
-  return keccak256(toUtf8Bytes(text));
-}
-
-export type DutchOutput = {
-  readonly token: string;
-  readonly startAmount: BigNumber;
-  readonly endAmount: BigNumber;
-  readonly recipient: string;
-};
-
-export type DutchOutputJSON = Omit<DutchOutput, "startAmount" | "endAmount"> & {
-  startAmount: string;
-  endAmount: string;
-};
-
-export type DutchInput = {
-  readonly token: string;
-  readonly startAmount: BigNumber;
-  readonly endAmount: BigNumber;
-};
-
-export type DutchInputJSON = Omit<DutchInput, "startAmount" | "endAmount"> & {
-  startAmount: string;
-  endAmount: string;
-};
+import { DutchInput, DutchInputJSON, DutchOutput, DutchOutputJSON } from "./DutchOrder";
 
 export type GladiusOrderInfo = OrderInfo & {
   decayStartTime: number;
