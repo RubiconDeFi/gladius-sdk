@@ -66,7 +66,11 @@ const KNOWN_ERRORS: { [key: string]: OrderValidation } = {
   "062dec56": OrderValidation.ExclusivityPeriod,
   "75c1bb14": OrderValidation.ExclusivityPeriod,
   TRANSFER_FROM_FAILED: OrderValidation.InsufficientFunds,
-  "e2dd1b82": OrderValidation.OK
+  "e2dd1b82": OrderValidation.OK,
+  "3a672a98": OrderValidation.OK,
+  "0fa27c7d": OrderValidation.OK,
+  "aabd5a09": OrderValidation.OK,
+  "d36ff1a8": OrderValidation.OK
 };
 
 export interface SignedOrder {
