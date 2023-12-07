@@ -76,7 +76,7 @@ type WitnessInfo = {
   outputs: DutchOutput[];
 };
 
-const DUTCH_ORDER_TYPES = {
+export const DUTCH_ORDER_TYPES = {
   ExclusiveDutchOrder: [
     { name: "info", type: "OrderInfo" },
     { name: "decayStartTime", type: "uint256" },

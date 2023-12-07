@@ -13,7 +13,7 @@ import { ResolvedOrder } from "../utils/OrderQuoter";
 import { getDecayedAmount } from "../utils/dutchDecay";
 
 import { Order, OrderInfo, OrderResolutionOptions } from "./types";
-import { DutchInput, DutchInputJSON, DutchOutput, DutchOutputJSON } from "./DutchOrder";
+import { DUTCH_ORDER_TYPES, DutchInput, DutchInputJSON, DutchOutput, DutchOutputJSON } from "./DutchOrder";
 
 export type GladiusOrderInfo = OrderInfo & {
   decayStartTime: number;
@@ -29,12 +29,13 @@ const STRICT_EXCLUSIVITY = BigNumber.from(0);
 
 export type GladiusOrderInfoJSON = Omit<
   GladiusOrderInfo,
-  "nonce" | "input" | "outputs" | "exclusivityOverrideBps"
+  "nonce" | "input" | "outputs" | "exclusivityOverrideBps" | "outputFillThreshold"
 > & {
   nonce: string;
   exclusivityOverrideBps: string;
   input: DutchInputJSON;
   outputs: DutchOutputJSON[];
+  outputFillThreshold: string;
 };
 
 type WitnessInfo = {
@@ -47,36 +48,6 @@ type WitnessInfo = {
   inputStartAmount: BigNumber;
   inputEndAmount: BigNumber;
   outputs: DutchOutput[];
-  outputFillThreshold: BigNumber;
-};
-
-const GLADIUS_ORDER_TYPES = {
-  ExclusiveGladiusOrder: [
-    { name: "info", type: "OrderInfo" },
-    { name: "decayStartTime", type: "uint256" },
-    { name: "decayEndTime", type: "uint256" },
-    { name: "exclusiveFiller", type: "address" },
-    { name: "exclusivityOverrideBps", type: "uint256" },
-    { name: "inputToken", type: "address" },
-    { name: "inputStartAmount", type: "uint256" },
-    { name: "inputEndAmount", type: "uint256" },
-    { name: "outputs", type: "DutchOutput[]" },
-    { name: "outputFillThreshold", type: "uint256" }
-  ],
-  OrderInfo: [
-    { name: "reactor", type: "address" },
-    { name: "swapper", type: "address" },
-    { name: "nonce", type: "uint256" },
-    { name: "deadline", type: "uint256" },
-    { name: "additionalValidationContract", type: "address" },
-    { name: "additionalValidationData", type: "bytes" },
-  ],
-  DutchOutput: [
-    { name: "token", type: "address" },
-    { name: "startAmount", type: "uint256" },
-    { name: "endAmount", type: "uint256" },
-    { name: "recipient", type: "address" },
-  ],
 };
 
 const GLADIUS_ORDER_ABI = [
@@ -89,7 +60,7 @@ const GLADIUS_ORDER_ABI = [
       "uint256",
       "tuple(address,uint256,uint256)",
       "tuple(address,uint256,uint256,address)[]",
-      "uint256",
+      "uint256" // outputfillthreshold
     ].join(",") +
     ")",
 ];
@@ -233,7 +204,7 @@ export class GladiusOrder extends Order {
         endAmount: output.endAmount.toString(),
         recipient: output.recipient,
       })),
-      outputFillThreshold: this.info.outputFillThreshold
+      outputFillThreshold: this.info.outputFillThreshold.toString()
     };
   }
 
@@ -306,7 +277,7 @@ export class GladiusOrder extends Order {
    */
   hash(): string {
     return ethers.utils._TypedDataEncoder
-      .from(GLADIUS_ORDER_TYPES)
+      .from(DUTCH_ORDER_TYPES)
       .hash(this.witnessInfo());
   }
 
@@ -389,8 +360,7 @@ export class GladiusOrder extends Order {
       inputToken: this.info.input.token,
       inputStartAmount: this.info.input.startAmount,
       inputEndAmount: this.info.input.endAmount,
-      outputs: this.info.outputs,
-      outputFillThreshold: this.info.outputFillThreshold
+      outputs: this.info.outputs
     };
   }
 
@@ -398,8 +368,8 @@ export class GladiusOrder extends Order {
     return {
       witness: this.witnessInfo(),
       // TODO: remove "Limit"
-      witnessTypeName: "ExclusiveGladiusOrder",
-      witnessType: GLADIUS_ORDER_TYPES,
+      witnessTypeName: "ExclusiveDutchOrder",
+      witnessType: DUTCH_ORDER_TYPES,
     };
   }
 }
