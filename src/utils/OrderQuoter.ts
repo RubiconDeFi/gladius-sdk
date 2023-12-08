@@ -16,6 +16,7 @@ import {
   MulticallResult,
   multicallSameContractManyFunctions,
 } from "./multicall";
+import { AbiCoder, keccak256 } from "ethers/lib/utils";
 
 export enum OrderValidation {
   Expired,
@@ -76,6 +77,7 @@ const KNOWN_ERRORS: { [key: string]: OrderValidation } = {
 export interface SignedOrder {
   order: Order;
   signature: string;
+  quantity?: number;
 }
 
 /**
@@ -109,8 +111,11 @@ export class OrderQuoter {
   }
 
   async quoteBatch(orders: SignedOrder[]): Promise<OrderQuote[]> {
+    const coder = new AbiCoder()
     const calls = orders.map((order) => {
-      return [order.order.serialize(), order.signature];
+      return (order.quantity !== undefined) ?
+        [coder.encode(['bytes32', 'bytes', 'uint256'], [keccak256("gladius_order"), order.order.serialize(), order.quantity]), order.signature] :
+        [order.order.serialize(), order.signature]
     });
 
     const results = await multicallSameContractManyFunctions(this.provider, {
