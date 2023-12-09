@@ -29,7 +29,7 @@ describe("GladiusOrder", () => {
             recipient: "0x0000000000000000000000000000000000000000",
           },
         ],
-        outputFillThreshold: BigNumber.from("1000000")
+        fillThreshold: BigNumber.from("1000000")
       },
       data
     );

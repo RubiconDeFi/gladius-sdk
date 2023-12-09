@@ -1,5 +1,5 @@
 import { BaseProvider } from "@ethersproject/providers";
-import { ethers } from "ethers";
+import { BigNumberish, ethers } from "ethers";
 
 import { ORDER_QUOTER_MAPPING } from "../constants";
 import {
@@ -8,7 +8,7 @@ import {
   GladiusOrderQuoter as GladiusOrderQuoterContract,
 } from "../contracts";
 import { MissingConfiguration } from "../errors";
-import { Order, TokenAmount } from "../order";
+import { Order } from "../order";
 import { parseExclusiveFillerData, ValidationType } from "../order/validation";
 
 import { NonceManager } from "./NonceManager";
@@ -16,29 +16,7 @@ import {
   MulticallResult,
   multicallSameContractManyFunctions,
 } from "./multicall";
-
-export enum OrderValidation {
-  Expired,
-  NonceUsed,
-  InsufficientFunds,
-  InvalidSignature,
-  InvalidOrderFields,
-  UnknownError,
-  ValidationFailed,
-  ExclusivityPeriod,
-  OK,
-}
-
-export interface ResolvedOrder {
-  input: TokenAmount;
-  outputs: TokenAmount[];
-}
-
-export interface OrderQuote {
-  validation: OrderValidation;
-  // not specified if validation is not OK
-  quote: ResolvedOrder | undefined;
-}
+import { OrderQuote, OrderValidation, ResolvedOrder } from "./OrderQuoter";
 
 const BASIC_ERROR = "0x08c379a0";
 
@@ -66,12 +44,12 @@ const KNOWN_ERRORS: { [key: string]: OrderValidation } = {
   "062dec56": OrderValidation.ExclusivityPeriod,
   "75c1bb14": OrderValidation.ExclusivityPeriod,
   TRANSFER_FROM_FAILED: OrderValidation.InsufficientFunds,
-  "e2dd1b82": OrderValidation.OK
 };
 
-export interface SignedOrder {
+export interface SignedGladiusOrder {
   order: Order;
   signature: string;
+  quantity: BigNumberish;
 }
 
 /**
@@ -96,17 +74,17 @@ export class GladiusOrderQuoter {
         this.provider
       );
     } else {
-      throw new MissingConfiguration("orderQuoter", chainId.toString());
+      throw new MissingConfiguration("gladiusOrderQuoter", chainId.toString());
     }
   }
 
-  async quote(order: SignedOrder): Promise<OrderQuote> {
+  async quote(order: SignedGladiusOrder): Promise<OrderQuote> {
     return (await this.quoteBatch([order]))[0];
   }
 
-  async quoteBatch(orders: SignedOrder[]): Promise<OrderQuote[]> {
+  async quoteBatch(orders: SignedGladiusOrder[]): Promise<OrderQuote[]> {
     const calls = orders.map((order) => {
-      return [order.order.serialize(), order.signature];
+      return [order.order.serialize(), order.signature, order.quantity];
     });
 
     const results = await multicallSameContractManyFunctions(this.provider, {
@@ -139,7 +117,7 @@ export class GladiusOrderQuoter {
   }
 
   private async getValidations(
-    orders: SignedOrder[],
+    orders: SignedGladiusOrder[],
     results: MulticallResult[]
   ): Promise<OrderValidation[]> {
     const validations = results.map((result, idx) => {
@@ -184,7 +162,7 @@ export class GladiusOrderQuoter {
   // - checks expiry before anything else, so old but already filled orders will return as expired
   // so this function takes orders in expired state and double checks them
   private async checkTerminalStates(
-    orders: SignedOrder[],
+    orders: SignedGladiusOrder[],
     validations: OrderValidation[]
   ): Promise<OrderValidation[]> {
     return await Promise.all(

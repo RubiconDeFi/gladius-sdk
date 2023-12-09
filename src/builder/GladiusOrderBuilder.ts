@@ -140,8 +140,8 @@ export class GladiusOrderBuilder extends OrderBuilder {
     return this;
   }
 
-  outputFillThreshold(minimum: BigNumber): GladiusOrderBuilder {
-    this.info.outputFillThreshold = minimum;
+  fillThreshold(minimum: BigNumber): GladiusOrderBuilder {
+    this.info.fillThreshold = minimum;
     return this;
   }
 
@@ -177,8 +177,8 @@ export class GladiusOrderBuilder extends OrderBuilder {
       `decayEndTime must be before or same as deadline: ${this.info.decayEndTime}`
     );
     invariant(
-        this.info.outputFillThreshold !== undefined && this.info.outputs[0] && this.info.outputFillThreshold.lte(this.info.outputs[0].endAmount),
-      `outputFillThreshold must be set and less than or equal to output amount`
+        this.info.fillThreshold !== undefined && this.info.outputs[0] && this.info.fillThreshold.lte(this.info.outputs[0].endAmount),
+      `fillThreshold must be set and less than or equal to output amount`
     );
 
     return new GladiusOrder(
@@ -189,7 +189,7 @@ export class GladiusOrderBuilder extends OrderBuilder {
         exclusivityOverrideBps: this.info.exclusivityOverrideBps,
         input: this.info.input,
         outputs: this.info.outputs,
-        outputFillThreshold: this.info.outputFillThreshold
+        fillThreshold: this.info.fillThreshold
       }),
       this.chainId,
       this.permit2Address
