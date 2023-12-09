@@ -3,9 +3,9 @@ import { ethers } from "ethers";
 
 import { ORDER_QUOTER_MAPPING } from "../constants";
 import {
-  ExclusiveDutchOrderReactor__factory,
-  OrderQuoter__factory,
-  OrderQuoter as OrderQuoterContract,
+  GladiusReactor__factory,
+  GladiusOrderQuoter__factory,
+  GladiusOrderQuoter as GladiusOrderQuoterContract,
 } from "../contracts";
 import { MissingConfiguration } from "../errors";
 import { Order, TokenAmount } from "../order";
@@ -77,8 +77,8 @@ export interface SignedOrder {
 /**
  * Order quoter
  */
-export class OrderQuoter {
-  private orderQuoter: OrderQuoterContract;
+export class GladiusOrderQuoter {
+  private orderQuoter: GladiusOrderQuoterContract;
 
   constructor(
     private provider: BaseProvider,
@@ -86,12 +86,12 @@ export class OrderQuoter {
     orderQuoterAddress?: string
   ) {
     if (orderQuoterAddress) {
-      this.orderQuoter = OrderQuoter__factory.connect(
+      this.orderQuoter = GladiusOrderQuoter__factory.connect(
         orderQuoterAddress,
         provider
       );
     } else if (ORDER_QUOTER_MAPPING[chainId]) {
-      this.orderQuoter = OrderQuoter__factory.connect(
+      this.orderQuoter = GladiusOrderQuoter__factory.connect(
         ORDER_QUOTER_MAPPING[chainId],
         this.provider
       );
@@ -195,7 +195,7 @@ export class OrderQuoter {
           order.order.info.deadline < Math.floor(new Date().getTime() / 1000)
         ) {
           // all reactors have the same interface, we just use limitorder to implement the interface
-          const reactor = ExclusiveDutchOrderReactor__factory.connect(
+          const reactor = GladiusReactor__factory.connect(
             order.order.info.reactor,
             this.provider
           );

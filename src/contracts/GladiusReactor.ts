@@ -4,6 +4,7 @@
 import type {
   BaseContract,
   BigNumber,
+  BigNumberish,
   BytesLike,
   CallOverrides,
   ContractTransaction,
@@ -37,17 +38,19 @@ export type SignedOrderStructOutput = [string, string] & {
   sig: string;
 };
 
-export interface ExclusiveGladiusOrderReactorInterface extends utils.Interface {
+export interface GladiusReactorInterface extends utils.Interface {
   functions: {
     "execute((bytes,bytes),uint256)": FunctionFragment;
     "executeBatch((bytes,bytes)[],uint256[])": FunctionFragment;
-    "executeBatchWithCallback((bytes,bytes)[],uint256,bytes)": FunctionFragment;
-    "executeWithCallback((bytes,bytes),uint256[],bytes)": FunctionFragment;
+    "executeBatchWithCallback((bytes,bytes)[],uint256[],bytes)": FunctionFragment;
+    "executeWithCallback((bytes,bytes),uint256,bytes)": FunctionFragment;
     "feeController()": FunctionFragment;
+    "initialize(address,address)": FunctionFragment;
+    "initialized()": FunctionFragment;
     "owner()": FunctionFragment;
     "permit2()": FunctionFragment;
+    "setOwner(address)": FunctionFragment;
     "setProtocolFeeController(address)": FunctionFragment;
-    "transferOwnership(address)": FunctionFragment;
   };
 
   getFunction(
@@ -57,40 +60,58 @@ export interface ExclusiveGladiusOrderReactorInterface extends utils.Interface {
       | "executeBatchWithCallback"
       | "executeWithCallback"
       | "feeController"
+      | "initialize"
+      | "initialized"
       | "owner"
       | "permit2"
+      | "setOwner"
       | "setProtocolFeeController"
-      | "transferOwnership"
   ): FunctionFragment;
 
   encodeFunctionData(
     functionFragment: "execute",
-    values: [SignedOrderStruct, BigNumber]
+    values: [SignedOrderStruct, PromiseOrValue<BigNumberish>]
   ): string;
   encodeFunctionData(
     functionFragment: "executeBatch",
-    values: [SignedOrderStruct[], BigNumber]
+    values: [SignedOrderStruct[], PromiseOrValue<BigNumberish>[]]
   ): string;
   encodeFunctionData(
     functionFragment: "executeBatchWithCallback",
-    values: [SignedOrderStruct[], BigNumber[], PromiseOrValue<BytesLike>]
+    values: [
+      SignedOrderStruct[],
+      PromiseOrValue<BigNumberish>[],
+      PromiseOrValue<BytesLike>
+    ]
   ): string;
   encodeFunctionData(
     functionFragment: "executeWithCallback",
-    values: [SignedOrderStruct, BigNumber, PromiseOrValue<BytesLike>]
+    values: [
+      SignedOrderStruct,
+      PromiseOrValue<BigNumberish>,
+      PromiseOrValue<BytesLike>
+    ]
   ): string;
   encodeFunctionData(
     functionFragment: "feeController",
     values?: undefined
   ): string;
+  encodeFunctionData(
+    functionFragment: "initialize",
+    values: [PromiseOrValue<string>, PromiseOrValue<string>]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "initialized",
+    values?: undefined
+  ): string;
   encodeFunctionData(functionFragment: "owner", values?: undefined): string;
   encodeFunctionData(functionFragment: "permit2", values?: undefined): string;
   encodeFunctionData(
-    functionFragment: "setProtocolFeeController",
+    functionFragment: "setOwner",
     values: [PromiseOrValue<string>]
   ): string;
   encodeFunctionData(
-    functionFragment: "transferOwnership",
+    functionFragment: "setProtocolFeeController",
     values: [PromiseOrValue<string>]
   ): string;
 
@@ -111,25 +132,27 @@ export interface ExclusiveGladiusOrderReactorInterface extends utils.Interface {
     functionFragment: "feeController",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
-  decodeFunctionResult(functionFragment: "permit2", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "initialize", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "setProtocolFeeController",
+    functionFragment: "initialized",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "owner", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "permit2", data: BytesLike): Result;
+  decodeFunctionResult(functionFragment: "setOwner", data: BytesLike): Result;
   decodeFunctionResult(
-    functionFragment: "transferOwnership",
+    functionFragment: "setProtocolFeeController",
     data: BytesLike
   ): Result;
 
   events: {
     "Fill(bytes32,address,address,uint256)": EventFragment;
-    "OwnershipTransferred(address,address)": EventFragment;
+    "LogSetOwner(address)": EventFragment;
     "ProtocolFeeControllerSet(address,address)": EventFragment;
   };
 
   getEvent(nameOrSignatureOrTopic: "Fill"): EventFragment;
-  getEvent(nameOrSignatureOrTopic: "OwnershipTransferred"): EventFragment;
+  getEvent(nameOrSignatureOrTopic: "LogSetOwner"): EventFragment;
   getEvent(nameOrSignatureOrTopic: "ProtocolFeeControllerSet"): EventFragment;
 }
 
@@ -146,17 +169,12 @@ export type FillEvent = TypedEvent<
 
 export type FillEventFilter = TypedEventFilter<FillEvent>;
 
-export interface OwnershipTransferredEventObject {
-  user: string;
-  newOwner: string;
+export interface LogSetOwnerEventObject {
+  owner: string;
 }
-export type OwnershipTransferredEvent = TypedEvent<
-  [string, string],
-  OwnershipTransferredEventObject
->;
+export type LogSetOwnerEvent = TypedEvent<[string], LogSetOwnerEventObject>;
 
-export type OwnershipTransferredEventFilter =
-  TypedEventFilter<OwnershipTransferredEvent>;
+export type LogSetOwnerEventFilter = TypedEventFilter<LogSetOwnerEvent>;
 
 export interface ProtocolFeeControllerSetEventObject {
   oldFeeController: string;
@@ -170,12 +188,12 @@ export type ProtocolFeeControllerSetEvent = TypedEvent<
 export type ProtocolFeeControllerSetEventFilter =
   TypedEventFilter<ProtocolFeeControllerSetEvent>;
 
-export interface ExclusiveGladiushOrderReactor extends BaseContract {
+export interface GladiusReactor extends BaseContract {
   connect(signerOrProvider: Signer | Provider | string): this;
   attach(addressOrName: string): this;
   deployed(): Promise<this>;
 
-  interface: ExclusiveGladiusOrderReactorInterface;
+  interface: GladiusReactorInterface;
 
   queryFilter<TEvent extends TypedEvent>(
     event: TypedEventFilter<TEvent>,
@@ -199,129 +217,153 @@ export interface ExclusiveGladiushOrderReactor extends BaseContract {
   functions: {
     execute(
       order: SignedOrderStruct,
-      quantity: BigNumber,
+      quantity: PromiseOrValue<BigNumberish>,
       overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
 
     executeBatch(
       orders: SignedOrderStruct[],
-      quantities: BigNumber[],
+      quantities: PromiseOrValue<BigNumberish>[],
       overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
 
     executeBatchWithCallback(
       orders: SignedOrderStruct[],
-      quantities: BigNumber[],
+      quantities: PromiseOrValue<BigNumberish>[],
       callbackData: PromiseOrValue<BytesLike>,
       overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
 
     executeWithCallback(
       order: SignedOrderStruct,
-      quantity: BigNumber,
+      quantity: PromiseOrValue<BigNumberish>,
       callbackData: PromiseOrValue<BytesLike>,
       overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
 
     feeController(overrides?: CallOverrides): Promise<[string]>;
 
+    initialize(
+      _permit2: PromiseOrValue<string>,
+      _owner: PromiseOrValue<string>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<ContractTransaction>;
+
+    initialized(overrides?: CallOverrides): Promise<[boolean]>;
+
     owner(overrides?: CallOverrides): Promise<[string]>;
 
     permit2(overrides?: CallOverrides): Promise<[string]>;
 
-    setProtocolFeeController(
-      _newFeeController: PromiseOrValue<string>,
+    setOwner(
+      owner_: PromiseOrValue<string>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
 
-    transferOwnership(
-      newOwner: PromiseOrValue<string>,
+    setProtocolFeeController(
+      _newFeeController: PromiseOrValue<string>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
   };
 
   execute(
     order: SignedOrderStruct,
-    quantity: BigNumber,
+    quantity: PromiseOrValue<BigNumberish>,
     overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
   executeBatch(
     orders: SignedOrderStruct[],
-    quantities: BigNumber[],
+    quantities: PromiseOrValue<BigNumberish>[],
     overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
   executeBatchWithCallback(
     orders: SignedOrderStruct[],
-    quantities: BigNumber[],
+    quantities: PromiseOrValue<BigNumberish>[],
     callbackData: PromiseOrValue<BytesLike>,
     overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
   executeWithCallback(
     order: SignedOrderStruct,
-    quantity: BigNumber,
+    quantity: PromiseOrValue<BigNumberish>,
     callbackData: PromiseOrValue<BytesLike>,
     overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
   feeController(overrides?: CallOverrides): Promise<string>;
 
+  initialize(
+    _permit2: PromiseOrValue<string>,
+    _owner: PromiseOrValue<string>,
+    overrides?: Overrides & { from?: PromiseOrValue<string> }
+  ): Promise<ContractTransaction>;
+
+  initialized(overrides?: CallOverrides): Promise<boolean>;
+
   owner(overrides?: CallOverrides): Promise<string>;
 
   permit2(overrides?: CallOverrides): Promise<string>;
+
+  setOwner(
+    owner_: PromiseOrValue<string>,
+    overrides?: Overrides & { from?: PromiseOrValue<string> }
+  ): Promise<ContractTransaction>;
 
   setProtocolFeeController(
     _newFeeController: PromiseOrValue<string>,
     overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
-  transferOwnership(
-    newOwner: PromiseOrValue<string>,
-    overrides?: Overrides & { from?: PromiseOrValue<string> }
-  ): Promise<ContractTransaction>;
-
   callStatic: {
     execute(
       order: SignedOrderStruct,
-      quantity: BigNumber,
+      quantity: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<void>;
 
     executeBatch(
       orders: SignedOrderStruct[],
-      quantities: BigNumber[],
+      quantities: PromiseOrValue<BigNumberish>[],
       overrides?: CallOverrides
     ): Promise<void>;
 
     executeBatchWithCallback(
       orders: SignedOrderStruct[],
-      quantities: BigNumber[],
+      quantities: PromiseOrValue<BigNumberish>[],
       callbackData: PromiseOrValue<BytesLike>,
       overrides?: CallOverrides
     ): Promise<void>;
 
     executeWithCallback(
       order: SignedOrderStruct,
-      quantity: BigNumber,
+      quantity: PromiseOrValue<BigNumberish>,
       callbackData: PromiseOrValue<BytesLike>,
       overrides?: CallOverrides
     ): Promise<void>;
 
     feeController(overrides?: CallOverrides): Promise<string>;
 
+    initialize(
+      _permit2: PromiseOrValue<string>,
+      _owner: PromiseOrValue<string>,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    initialized(overrides?: CallOverrides): Promise<boolean>;
+
     owner(overrides?: CallOverrides): Promise<string>;
 
     permit2(overrides?: CallOverrides): Promise<string>;
 
-    setProtocolFeeController(
-      _newFeeController: PromiseOrValue<string>,
+    setOwner(
+      owner_: PromiseOrValue<string>,
       overrides?: CallOverrides
     ): Promise<void>;
 
-    transferOwnership(
-      newOwner: PromiseOrValue<string>,
+    setProtocolFeeController(
+      _newFeeController: PromiseOrValue<string>,
       overrides?: CallOverrides
     ): Promise<void>;
   };
@@ -340,14 +382,10 @@ export interface ExclusiveGladiushOrderReactor extends BaseContract {
       nonce?: null
     ): FillEventFilter;
 
-    "OwnershipTransferred(address,address)"(
-      user?: PromiseOrValue<string> | null,
-      newOwner?: PromiseOrValue<string> | null
-    ): OwnershipTransferredEventFilter;
-    OwnershipTransferred(
-      user?: PromiseOrValue<string> | null,
-      newOwner?: PromiseOrValue<string> | null
-    ): OwnershipTransferredEventFilter;
+    "LogSetOwner(address)"(
+      owner?: PromiseOrValue<string> | null
+    ): LogSetOwnerEventFilter;
+    LogSetOwner(owner?: PromiseOrValue<string> | null): LogSetOwnerEventFilter;
 
     "ProtocolFeeControllerSet(address,address)"(
       oldFeeController?: null,
@@ -362,43 +400,51 @@ export interface ExclusiveGladiushOrderReactor extends BaseContract {
   estimateGas: {
     execute(
       order: SignedOrderStruct,
-      quantity: BigNumber,
+      quantity: PromiseOrValue<BigNumberish>,
       overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
     executeBatch(
       orders: SignedOrderStruct[],
-      quantities: BigNumber[],
+      quantities: PromiseOrValue<BigNumberish>[],
       overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
     executeBatchWithCallback(
       orders: SignedOrderStruct[],
-      quantities: BigNumber[],
+      quantities: PromiseOrValue<BigNumberish>[],
       callbackData: PromiseOrValue<BytesLike>,
       overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
     executeWithCallback(
       order: SignedOrderStruct,
-      quantity: BigNumber,
+      quantity: PromiseOrValue<BigNumberish>,
       callbackData: PromiseOrValue<BytesLike>,
       overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
     feeController(overrides?: CallOverrides): Promise<BigNumber>;
 
+    initialize(
+      _permit2: PromiseOrValue<string>,
+      _owner: PromiseOrValue<string>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<BigNumber>;
+
+    initialized(overrides?: CallOverrides): Promise<BigNumber>;
+
     owner(overrides?: CallOverrides): Promise<BigNumber>;
 
     permit2(overrides?: CallOverrides): Promise<BigNumber>;
 
-    setProtocolFeeController(
-      _newFeeController: PromiseOrValue<string>,
+    setOwner(
+      owner_: PromiseOrValue<string>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
-    transferOwnership(
-      newOwner: PromiseOrValue<string>,
+    setProtocolFeeController(
+      _newFeeController: PromiseOrValue<string>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
   };
@@ -406,43 +452,51 @@ export interface ExclusiveGladiushOrderReactor extends BaseContract {
   populateTransaction: {
     execute(
       order: SignedOrderStruct,
-      quantity: BigNumber,
+      quantity: PromiseOrValue<BigNumberish>,
       overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 
     executeBatch(
       orders: SignedOrderStruct[],
-      quantities: BigNumber[],
+      quantities: PromiseOrValue<BigNumberish>[],
       overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 
     executeBatchWithCallback(
       orders: SignedOrderStruct[],
-      quantities: BigNumber[],
+      quantities: PromiseOrValue<BigNumberish>[],
       callbackData: PromiseOrValue<BytesLike>,
       overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 
     executeWithCallback(
       order: SignedOrderStruct,
-      quantity: BigNumber,
+      quantity: PromiseOrValue<BigNumberish>,
       callbackData: PromiseOrValue<BytesLike>,
       overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 
     feeController(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
+    initialize(
+      _permit2: PromiseOrValue<string>,
+      _owner: PromiseOrValue<string>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<PopulatedTransaction>;
+
+    initialized(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
     owner(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
     permit2(overrides?: CallOverrides): Promise<PopulatedTransaction>;
 
-    setProtocolFeeController(
-      _newFeeController: PromiseOrValue<string>,
+    setOwner(
+      owner_: PromiseOrValue<string>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 
-    transferOwnership(
-      newOwner: PromiseOrValue<string>,
+    setProtocolFeeController(
+      _newFeeController: PromiseOrValue<string>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
   };

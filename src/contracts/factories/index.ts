@@ -3,6 +3,8 @@
 /* eslint-disable */
 export { ExclusiveDutchOrderReactor__factory } from "./ExclusiveDutchOrderReactor__factory";
 export { ExclusiveFillerValidation__factory } from "./ExclusiveFillerValidation__factory";
+export { GladiusOrderQuoter__factory } from "./GladiusOrderQuoter__factory";
+export { GladiusReactor__factory } from "./GladiusReactor__factory";
 export { MockERC20__factory } from "./MockERC20__factory";
 export { OrderQuoter__factory } from "./OrderQuoter__factory";
 export { Permit2__factory } from "./Permit2__factory";
