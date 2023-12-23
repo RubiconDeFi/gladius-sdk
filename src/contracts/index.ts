@@ -3,6 +3,8 @@
 /* eslint-disable */
 export type { ExclusiveDutchOrderReactor } from "./ExclusiveDutchOrderReactor";
 export type { ExclusiveFillerValidation } from "./ExclusiveFillerValidation";
+export type { GladiusOrderQuoter } from "./GladiusOrderQuoter";
+export type { GladiusReactor } from "./GladiusReactor";
 export type { MockERC20 } from "./MockERC20";
 export type { OrderQuoter } from "./OrderQuoter";
 export type { Permit2 } from "./Permit2";
@@ -13,6 +15,8 @@ export * as factories from "./factories";
 export { DeploylessMulticall2__factory } from "./factories/DeploylessMulticall2__factory";
 export { ExclusiveDutchOrderReactor__factory } from "./factories/ExclusiveDutchOrderReactor__factory";
 export { ExclusiveFillerValidation__factory } from "./factories/ExclusiveFillerValidation__factory";
+export { GladiusOrderQuoter__factory } from "./factories/GladiusOrderQuoter__factory";
+export { GladiusReactor__factory } from "./factories/GladiusReactor__factory";
 export { MockERC20__factory } from "./factories/MockERC20__factory";
 export { Multicall2__factory } from "./factories/Multicall2__factory";
 export { OrderQuoter__factory } from "./factories/OrderQuoter__factory";
