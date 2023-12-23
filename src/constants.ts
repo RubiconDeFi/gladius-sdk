@@ -28,6 +28,14 @@ export const EXCLUSIVE_FILLER_VALIDATION_MAPPING: {
   12341234: "0x8A66A74e15544db9688B68B06E116f5d19e5dF90",
 };
 
+export const CONTRACT_START_BLOCK: {
+  readonly [key: number]: number;
+} = {
+  10: 111049629,
+  42161: 132837528,
+  421613: 41110604
+}
+
 export enum KNOWN_EVENT_SIGNATURES {
   ERC20_TRANSFER = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
 }
@@ -90,3 +98,15 @@ export const REVERSE_REACTOR_MAPPING: ReverseReactorMapping = Object.entries(
 }, {});
 
 export const BPS = 10000;
+
+export enum ChainId {
+  ARBITRUM_ONE = 42161,
+  ARBITRUM_GOERLI = 421613,
+  OPTIMISM = 10,
+}
+
+export const SUPPORTED_CHAINS = [
+  ChainId.ARBITRUM_ONE,
+  ChainId.ARBITRUM_GOERLI,
+  ChainId.OPTIMISM,
+]
