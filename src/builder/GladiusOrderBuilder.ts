@@ -177,7 +177,7 @@ export class GladiusOrderBuilder extends OrderBuilder {
       `decayEndTime must be before or same as deadline: ${this.info.decayEndTime}`
     );
     invariant(
-        this.info.fillThreshold !== undefined && this.info.outputs[0] && this.info.fillThreshold.lte(this.info.outputs[0].endAmount),
+        this.info.fillThreshold !== undefined && this.info.input && this.info.fillThreshold.lte(this.info.input.endAmount),
       `fillThreshold must be set and less than or equal to output amount`
     );
 
