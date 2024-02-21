@@ -1,7 +1,7 @@
 {
   "name": "@rubicondefi/gladius-sdk",
   "author": "Rubicon",
-  "version": "1.4.21",
+  "version": "1.4.22",
   "license": "MIT",
   "main": "dist/src/index.js",
   "typings": "dist/src/index.d.ts",
