@@ -11,7 +11,7 @@ export const PERMIT2_MAPPING: { readonly [key: number]: string } = {
 };
 
 export const ORDER_QUOTER_MAPPING: { readonly [key: number]: string } = {
-  1: "0x54539967a06Fc0E3C3ED0ee320Eb67362D13C5fF",
+  1: "0x56e43695d183dcFa9D8fE95E796227A491627Fd9",
   5: "0x54539967a06Fc0E3C3ED0ee320Eb67362D13C5fF",
   10: "0x9244aeAE36f34d63244EDCF9fdb58C03cE4Ce12d",
   137: "0x54539967a06Fc0E3C3ED0ee320Eb67362D13C5fF",
@@ -57,7 +57,7 @@ type ReverseReactorMapping = {
 
 export const REACTOR_ADDRESS_MAPPING: ReactorMapping = {
   1: {
-    [OrderType.Dutch]: "0x6000da47483062A0D734Ba3dc7576Ce6A0B645C4",
+    [OrderType.Dutch]: "0x3C53c04d633bec3fB0De3492607C239BF92d07f9",
   },
   5: {
     [OrderType.Dutch]: "0x6000da47483062A0D734Ba3dc7576Ce6A0B645C4",
