@@ -1,6 +1,4 @@
 import { SignatureLike } from "@ethersproject/bytes";
-import { keccak256 } from "@ethersproject/keccak256";
-import { toUtf8Bytes } from "@ethersproject/strings";
 import {
   PermitTransferFrom,
   PermitTransferFromData,
@@ -15,53 +13,29 @@ import { ResolvedOrder } from "../utils/OrderQuoter";
 import { getDecayedAmount } from "../utils/dutchDecay";
 
 import { Order, OrderInfo, OrderResolutionOptions } from "./types";
+import { DutchInput, DutchInputJSON, DutchOutput, DutchOutputJSON } from "./DutchOrder";
 
-export function id(text: string): string {
-  return keccak256(toUtf8Bytes(text));
-}
-
-export type DutchOutput = {
-  readonly token: string;
-  readonly startAmount: BigNumber;
-  readonly endAmount: BigNumber;
-  readonly recipient: string;
-};
-
-export type DutchOutputJSON = Omit<DutchOutput, "startAmount" | "endAmount"> & {
-  startAmount: string;
-  endAmount: string;
-};
-
-export type DutchInput = {
-  readonly token: string;
-  readonly startAmount: BigNumber;
-  readonly endAmount: BigNumber;
-};
-
-export type DutchInputJSON = Omit<DutchInput, "startAmount" | "endAmount"> & {
-  startAmount: string;
-  endAmount: string;
-};
-
-export type DutchOrderInfo = OrderInfo & {
+export type GladiusOrderInfo = OrderInfo & {
   decayStartTime: number;
   decayEndTime: number;
   exclusiveFiller: string;
   exclusivityOverrideBps: BigNumber;
   input: DutchInput;
   outputs: DutchOutput[];
+  fillThreshold: BigNumber;
 };
 
 const STRICT_EXCLUSIVITY = BigNumber.from(0);
 
-export type DutchOrderInfoJSON = Omit<
-  DutchOrderInfo,
-  "nonce" | "input" | "outputs" | "exclusivityOverrideBps"
+export type GladiusOrderInfoJSON = Omit<
+  GladiusOrderInfo,
+  "nonce" | "input" | "outputs" | "exclusivityOverrideBps" | "fillThreshold"
 > & {
   nonce: string;
   exclusivityOverrideBps: string;
   input: DutchInputJSON;
   outputs: DutchOutputJSON[];
+  fillThreshold: string;
 };
 
 type WitnessInfo = {
@@ -74,10 +48,11 @@ type WitnessInfo = {
   inputStartAmount: BigNumber;
   inputEndAmount: BigNumber;
   outputs: DutchOutput[];
+  fillThreshold: BigNumber;
 };
 
-export const DUTCH_ORDER_TYPES = {
-  ExclusiveDutchOrder: [
+export const GLADIUS_ORDER_TYPES = {
+  GladiusOrder: [
     { name: "info", type: "OrderInfo" },
     { name: "decayStartTime", type: "uint256" },
     { name: "decayEndTime", type: "uint256" },
@@ -87,6 +62,7 @@ export const DUTCH_ORDER_TYPES = {
     { name: "inputStartAmount", type: "uint256" },
     { name: "inputEndAmount", type: "uint256" },
     { name: "outputs", type: "DutchOutput[]" },
+    { name: "fillThreshold", type: "uint256" },
   ],
   OrderInfo: [
     { name: "reactor", type: "address" },
@@ -104,7 +80,7 @@ export const DUTCH_ORDER_TYPES = {
   ],
 };
 
-const DUTCH_ORDER_ABI = [
+const GLADIUS_ORDER_ABI = [
   "tuple(" +
     [
       "tuple(address,address,uint256,uint256,address,bytes)",
@@ -114,15 +90,16 @@ const DUTCH_ORDER_ABI = [
       "uint256",
       "tuple(address,uint256,uint256)",
       "tuple(address,uint256,uint256,address)[]",
+      "uint256" // fillthreshold
     ].join(",") +
     ")",
 ];
 
-export class DutchOrder extends Order {
+export class GladiusOrder extends Order {
   public permit2Address: string;
 
   constructor(
-    public readonly info: DutchOrderInfo,
+    public readonly info: GladiusOrderInfo,
     public readonly chainId: number,
     readonly _permit2Address?: string
   ) {
@@ -137,11 +114,11 @@ export class DutchOrder extends Order {
   }
 
   static fromJSON(
-    json: DutchOrderInfoJSON,
+    json: GladiusOrderInfoJSON,
     chainId: number,
     _permit2Address?: string
-  ): DutchOrder {
-    return new DutchOrder(
+  ): GladiusOrder {
+    return new GladiusOrder(
       {
         ...json,
         exclusivityOverrideBps: BigNumber.from(json.exclusivityOverrideBps),
@@ -157,15 +134,16 @@ export class DutchOrder extends Order {
           endAmount: BigNumber.from(output.endAmount),
           recipient: output.recipient,
         })),
+        fillThreshold: BigNumber.from(json.fillThreshold)
       },
       chainId,
       _permit2Address
     );
   }
 
-  static parse(encoded: string, chainId: number, permit2?: string): DutchOrder {
+  static parse(encoded: string, chainId: number, permit2?: string): GladiusOrder {
     const abiCoder = new ethers.utils.AbiCoder();
-    const decoded = abiCoder.decode(DUTCH_ORDER_ABI, encoded);
+    const decoded = abiCoder.decode(GLADIUS_ORDER_ABI, encoded);
     const [
       [
         [
@@ -182,9 +160,10 @@ export class DutchOrder extends Order {
         exclusivityOverrideBps,
         [inputToken, inputStartAmount, inputEndAmount],
         outputs,
+        fillThreshold
       ],
     ] = decoded;
-    return new DutchOrder(
+    return new GladiusOrder(
       {
         reactor,
         swapper,
@@ -217,6 +196,7 @@ export class DutchOrder extends Order {
             };
           }
         ),
+        fillThreshold
       },
       chainId,
       permit2
@@ -226,7 +206,7 @@ export class DutchOrder extends Order {
   /**
    * @inheritdoc order
    */
-  toJSON(): DutchOrderInfoJSON & {
+  toJSON(): GladiusOrderInfoJSON & {
     permit2Address: string;
     chainId: number;
   } {
@@ -254,6 +234,7 @@ export class DutchOrder extends Order {
         endAmount: output.endAmount.toString(),
         recipient: output.recipient,
       })),
+      fillThreshold: this.info.fillThreshold.toString()
     };
   }
 
@@ -262,7 +243,7 @@ export class DutchOrder extends Order {
    */
   serialize(): string {
     const abiCoder = new ethers.utils.AbiCoder();
-    return abiCoder.encode(DUTCH_ORDER_ABI, [
+    return abiCoder.encode(GLADIUS_ORDER_ABI, [
       [
         [
           this.info.reactor,
@@ -287,6 +268,7 @@ export class DutchOrder extends Order {
           output.endAmount,
           output.recipient,
         ]),
+        this.info.fillThreshold
       ],
     ]);
   }
@@ -325,7 +307,7 @@ export class DutchOrder extends Order {
    */
   hash(): string {
     return ethers.utils._TypedDataEncoder
-      .from(DUTCH_ORDER_TYPES)
+      .from(GLADIUS_ORDER_TYPES)
       .hash(this.witnessInfo());
   }
 
@@ -409,6 +391,7 @@ export class DutchOrder extends Order {
       inputStartAmount: this.info.input.startAmount,
       inputEndAmount: this.info.input.endAmount,
       outputs: this.info.outputs,
+      fillThreshold: this.info.fillThreshold
     };
   }
 
@@ -416,8 +399,8 @@ export class DutchOrder extends Order {
     return {
       witness: this.witnessInfo(),
       // TODO: remove "Limit"
-      witnessTypeName: "ExclusiveDutchOrder",
-      witnessType: DUTCH_ORDER_TYPES,
+      witnessTypeName: "GladiusOrder",
+      witnessType: GLADIUS_ORDER_TYPES,
     };
   }
 }
